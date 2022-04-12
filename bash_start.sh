@@ -1,0 +1,10 @@
+/home/andre/Documents/PEDROSO/client1.sh &
+/home/andre/Documents/PEDROSO/client2.sh &
+/home/andre/Documents/PEDROSO/client3.sh &
+/home/andre/Documents/PEDROSO/client4.sh &
+/home/andre/Documents/PEDROSO/client5.sh &
+/home/andre/Documents/PEDROSO/client6.sh &
+/home/andre/Documents/PEDROSO/client7.sh &
+/home/andre/Documents/PEDROSO/client8.sh &
+/home/andre/Documents/PEDROSO/client9.sh &
+/home/andre/Documents/PEDROSO/client10.sh &
