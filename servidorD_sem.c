@@ -1,13 +1,15 @@
-# include <sys/types.h>
-# include <sys/socket.h>
-# include <netinet/in.h>
-# include <netdb.h>
-# include <stdio.h>
-# include <string.h>
-# include <stdlib.h>
-# include <semaphore.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <semaphore.h>
+#include <ctype.h>
+#include <time.h>
 
-# define PROTOPORT 8050
+# define PROTOPORT 9550
 # define QLEN 6
 
 int visits = 0;
@@ -19,6 +21,7 @@ int id = 0;
 sem_t read ;
 sem_t wread ;
 sem_t m ;
+sem_t m0;
 
 void LeDitado ()
 {
@@ -61,7 +64,9 @@ int words(const char sentence [ ])
 	return contado ; // retorna resultado
 }
 
-void leitor ( char *str , int *sd ){
+void leitor ( char *str , int sd ){
+	//int sd = *(int *)sd2; 
+	
 	char *endptr , *local ;
 	char cpy [1000]; // usado para armazenar ditado
 	char cpy1 [1000]; // usado para armazenar ditado
@@ -79,7 +84,7 @@ void leitor ( char *str , int *sd ){
 		sem_wait(&m); 
 		sprintf (str , "\n Ditado %d : %s " , visits%ditados , msg[visits%ditados]);
 		send(sd,str , strlen (str) ,0);
-		sem_post (&m); 
+		sem_post(&m); 
 	}
 	else
 	if (!strncmp ( str , "GETN" ,4)) {
@@ -164,8 +169,8 @@ void leitor ( char *str , int *sd ){
 }
 
 
-void escritor( char *str , int *sd2 ){
-	int sd = *sd2 ;
+void escritor( char *str , int  sd ){
+	// int sd = *(int *)sd2; 
 	char *endptr , *local ;
 	char cpy [1000]; // usado para armazenar ditado
 	char cpy1 [1000]; // usado para armazenar ditado
@@ -173,7 +178,7 @@ void escritor( char *str , int *sd2 ){
 	char needle [1000]; // usado no search
 	int i =0 , j , b , val , val1 , readcount =0;
 	int novoditado = 0;
-
+	
 	if (! strncmp ( str , "DEL" ,3)) { 
 		sem_wait (&wread );
 		sem_wait (&m );
@@ -237,7 +242,7 @@ void escritor( char *str , int *sd2 ){
 		sem_post (&m );
 		sem_post (&wread ); 
 	} else
-	if (! strncmp ( str , " GRAVA " ,5)) {
+	if (! strncmp ( str , "GRAVA" ,5)) {
 		sem_wait (&wread );
 		sem_wait (&m );
 
@@ -257,7 +262,7 @@ void escritor( char *str , int *sd2 ){
 			sem_post (&m );
 			sem_post (&wread ); 
 	} else
-	if (! strncmp ( str , " LE " ,2)) {
+	if (! strncmp ( str , "LE" ,2)) {
 		sem_wait (&wread );
 		sem_wait (&m );
 
@@ -274,7 +279,7 @@ void escritor( char *str , int *sd2 ){
 		sem_post (&m );
 		sem_post (&wread ); 
 	} else
-	if (! strncmp ( str , " ALTERACOES " ,10)) {
+	if (! strncmp ( str , "ALTERACOES" ,10)) {
 		sem_wait (&wread );
 		sem_wait (&m );
 		char result [30];
@@ -287,151 +292,165 @@ void escritor( char *str , int *sd2 ){
 }
 
 
-void atendeConexao ( int *sd2 )
+void *atendeConexao(void *sd2 )
 {
-	int sd = *sd2 ;
+	int sd = *(int *)sd2;
+	sem_post(&m0);
 	char str [1000] , *endptr , *local ;
-	int i =0 , j , b , val , val1 ;
+	int i = 0 , j , b , val , val1 ;
 	int novoditado = 0;
+
 
 	while (1) {
 		visits ++;
-		sprintf ( str , "REQUISIÇÃO %d \n " , visits );
-		send ( sd , str , strlen ( str ) ,0);
-		b = recv ( sd , str ,999 ,0);
-		str [ b ]=0;
-		printf ( "\nComando recebido :%s" , str );
+		sprintf( str , "REQUISIÇÃO %d \n " , visits );
+		send( sd , str , strlen(str) ,0);
+		b = recv( sd , str ,999 ,0);
+		str [b]=0;
 
-	uppercase ( str );
+	uppercase(str);
 
-		if (! strncmp ( str , "GETR" ,4)) {
-			leitor ( str , sd );
+		if (!strncmp(str ,"GETR",4)) {
+			leitor(str, sd);
 		} else
-		if (! strncmp ( str , "GETN" ,4)) {
-			leitor ( str , sd );
+		if (!strncmp(str ,"GETN" ,4)) {
+			leitor(str, sd);
 		}
 		else
-		if (! strncmp ( str , "DEL" ,3)) { /* apagar ditado */
-			escritor ( str , sd );
+		if (!strncmp(str,"DEL",3)) { /* apagar ditado */
+			escritor(str,sd);
 		}
 		else
-		if (! strncmp ( str , "ROTATE" ,6)) { /* trocar as p o s i s do ditado */
-			escritor ( str , sd );
+		if (!strncmp(str,"ROTATE",6)) { /* trocar as p o s i s do ditado */
+			escritor(str, sd);
 		}
 		else
-		if (! strncmp ( str , "SEARCH" ,6)) { /* procurar uma frase no ditado */
-			leitor ( str , sd );
+		if (!strncmp(str,"SEARCH",6)) { /* procurar uma frase no ditado */
+			leitor(str, sd);
 		}
 		else
-		if (! strncmp ( str , "REPLACE" ,7)) {
-			escritor ( str , sd );
+		if (!strncmp(str,"REPLACE",7)) {
+			escritor(str,sd);
 		} else
 		if (! strncmp ( str , "PALAVRASD" ,9)) {
 			leitor ( str , sd );
 		} else
-		if (! strncmp ( str , "PALAVRAST" ,9)) {
-			leitor ( str , sd );
+		if (!strncmp(str,"PALAVRAST",9)) {
+			leitor(str,sd);
 		} else
-		if (! strncmp ( str , "GRAVA" ,5)) {
-			escritor ( str , sd );
+		if (!strncmp(str,"GRAVA",5)) {
+			escritor(str,sd);
 		}
 		else
-		if (! strncmp ( str , "LE" ,2)) {
-			escritor ( str , sd );
+		if (!strncmp(str,"LE",2)) {
+			escritor(str,sd);
 		} else
-		if (! strncmp ( str , "ALTERACOES" ,10)) {
-			escritor ( str , sd );
+		if (!strncmp(str,"ALTERACOES",10)) {
+			escritor(str,sd);
 		}
 		else
-		if (! strncmp ( str , "FIM" ,3)) {
-			sprintf ( str , "\n Até Logo " );
-			send ( sd , str , strlen ( str ) ,0);
+		if (!strncmp(str,"FIM",3)) {
+			sprintf(str,"\n Até Logo ");
+			send(sd,str,strlen(str),0);
 		break ;
 		}
 		else
-		if (! strncmp ( str , "VER" ,3)) {
-			sprintf ( str , " \nServidor de Ditados 1.0 Beta. " );
-			send ( sd , str , strlen ( str ) ,0);
+		if (!strncmp(str,"VER",3)) {
+			sprintf(str," \nServidor de Ditados 1.0 Beta. " );
+			send(sd,str,strlen(str),0);
 		}
 		else {
-			sprintf ( str , " \nErro de Protocolo " );
-			send ( sd , str , strlen ( str ) ,0);
+			sprintf(str," \nErro de Protocolo " );
+			send(sd,str,strlen(str),0);
 		}
 	}
-	close( sd );
+	close(sd);
 }
 
-main( argc , argv )
-	int argc ;
-	char *argv [];
-	
-	{
-	struct protoent *ptrp ; /* pointer to a protocol table entry */
-	struct sockaddr_in sad ; /* structure to hold server ’s address */
-	struct sockaddr_in cad ; /* structure to hold client ’s address */
-	int sd , sd2 ; /* socket descriptors */
-	int port ;/* protocol port number */
-	int alen ; /* length of address */
-	pthread_t t ;
-	
-	sem_init (&read , 0 , 1); /* inicializa o s e m f o r o m com o valor 1 */
-	sem_init (&wread , 0 , 1); /* inicializa o s e m f o r o m com o valor 1 */
-	sem_init (&m , 0 , 1); /* inicializa o s e m f o r o m com o valor 1 */
- 
- 	memset (( char *)&sad ,0 , sizeof ( sad )); /* clear sockaddr structure */
-	sad.sin_family = AF_INET ; /* set family to Internet */
-	sad.sin_addr.s_addr = INADDR_ANY ; /* set the local IP address */
 
-	/* Check command - line argument for protocol port and extract */
-	/* port number if one is specified . Otherwise , use the default */	
- 	/* port value given by constant PROTOPORT*/
-	if ( argc > 1) {
-		port = atoi ( argv [1]);
+int main(int argc, char **argv)
+{
+	struct  protoent *ptrp;  /* pointer to a protocol table entry   */
+	struct  sockaddr_in sad; /* structure to hold server's address  */
+	struct  sockaddr_in cad; /* structure to hold client's address  */
+	int     sd, sd2;         /* socket descriptors                  */
+	int     port;            /* protocol port number                */
+	int     alen;            /* length of address                   */
+        pthread_t t;
+	
+        srandom(time(NULL)); /* inicializa a semente do gerador de nÃºmeros aleatÃ³rios */
+	
+	memset((char *)&sad,0,sizeof(sad)); /* clear sockaddr structure */
+	sad.sin_family = AF_INET;         /* set family to Internet     */
+	sad.sin_addr.s_addr = INADDR_ANY; /* set the local IP address   */
+	
+	/* Check command-line argument for protocol port and extract    */
+	/* port number if one is specified.  Otherwise, use the default */
+	/* port value given by constant PROTOPORT                       */
+	
+	if (argc > 1) {                 /* if argument specified        */
+		port = atoi(argv[1]);   /* convert argument to binary   */
 	} else {
-	port = PROTOPORT ;
+		port = PROTOPORT;       /* use default port number      */
 	}
-	if ( port > 0)
-	/* test for illegal value */
-		sad.sin_port = htons (( u_short ) port );
-	else {
-	/* print error message and exit */
-		fprintf ( stderr , "bad port number %s \n" , argv [1]);
-		exit (1);
-	}
-	LeDitado ();
-	/* Map TCP transport protocol name to protocol number */
-	if ((( ptrp = getprotobyname("tcp"))) == NULL ){
-		fprintf ( stderr , "cannot map \"tcp\"to protocol number " );
+	if (port > 0)                   /* test for illegal value       */
+		sad.sin_port = htons((u_short)port);
+	else {                          /* print error message and exit */
+		fprintf(stderr,"bad port number %s\n",argv[1]);
 		exit(1);
 	}
+
+        LeDitado();	
+  
+	/* Map TCP transport protocol name to protocol number */
+	
+	if ( ((ptrp = getprotobyname("tcp"))) == NULL) {
+		fprintf(stderr, "cannot map \"tcp\" to protocol number");
+		exit(1);
+	}
+	
 	/* Create a socket */
-	sd = socket (PF_INET, SOCK_STREAM, ptrp->p_proto );
-	if ( sd < 0) {
-		fprintf ( stderr , "socket creation failed \n" );
-		exit (1);
+	
+	sd = socket(PF_INET, SOCK_STREAM, ptrp->p_proto);
+	if (sd < 0) {
+		fprintf(stderr, "socket creation failed\n");
+		exit(1);
 	}
+	
 	/* Bind a local address to the socket */
-	if ( bind ( sd , ( struct sockaddr *)&sad , sizeof ( sad )) < 0) {
-		fprintf ( stderr , "bind failed \n" );
-		exit (1);
+	
+	if (bind(sd, (struct sockaddr *)&sad, sizeof(sad)) < 0) {
+		fprintf(stderr,"bind failed\n");
+		exit(1);
 	}
+	
 	/* Specify size of request queue */
-	if ( listen ( sd , QLEN ) < 0) {
-		fprintf ( stderr , "listen failed \n " );
-		exit (1);
+	
+	if (listen(sd, QLEN) < 0) {
+		fprintf(stderr,"listen failed\n");
+		exit(1);
 	}
+	
 	/* Main server loop - accept and handle requests */
+	sem_init(&m, 0, 1);
+	sem_init(&wread, 0, 1);
+	sem_init(&read, 0, 1);
+	sem_init(&m0, 0, 1);
+	
+	
 	while (1) {
-		alen = sizeof ( cad );
-		if ( ( sd2 = accept ( sd , ( struct sockaddr *)&cad , &alen )) < 0) {
-			fprintf ( stderr , " accept failed \n " );
-			exit (1);
+	
+	
+		alen = sizeof(cad);
+		if ( (sd2=accept(sd, (struct sockaddr *)&cad, &alen)) < 0) {
+			fprintf(stderr, "accept failed\n");
+			exit(1);
 		}
-		printf ( "\nServidor atendendo conexao %d " , visits );
-		pthread_create(&t , NULL , atendeConexao , ( int *) &sd2 );
+		printf ("\nServidor atendendo conexão %d", visits);
+                pthread_create(&t, NULL,  &atendeConexao, &sd2 );
+                sem_wait(&m0);
 	}
 }
-
 
 
 
