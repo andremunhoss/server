@@ -9,8 +9,8 @@
 #include <ctype.h>
 #include <time.h>
 
-# define PROTOPORT 9550
-# define QLEN 6
+#define PROTOPORT 9551
+#define QLEN 6
 
 int visits = 0;
 char msg [1000][1000];
@@ -27,7 +27,7 @@ void LeDitado ()
 {
 	FILE *arq ;
 
-	if (( arq = fopen ("Ditados.txt" ,"r" )) == NULL ) { printf ( "\n Erro lendo arquivo ...\n \n " ); exit (0);}
+	if ((arq = fopen ("Ditados.txt" ,"r" )) == NULL ) { printf ( "\n Erro lendo arquivo ...\n \n " ); exit (0);}
 	
 	while (!feof(arq)) {
 		fgets (msg[ ditados ] ,999 , arq ); 
@@ -82,87 +82,90 @@ void leitor ( char *str , int sd ){
 	}
 	if (!strncmp (str,"GETR",4)) {
 		sem_wait(&m); 
-		sprintf (str , "\n Ditado %d : %s " , visits%ditados , msg[visits%ditados]);
-		send(sd,str , strlen (str) ,0);
+			sprintf(str,"\nDitado %d: %s ", rand() % ditados, msg[rand() % ditados]);
+		    send(sd,str,strlen(str),0);
 		sem_post(&m); 
 	}
 	else
 	if (!strncmp ( str , "GETN" ,4)) {
 		sem_wait (&m);
-		b = recv ( sd , str ,999 ,0);
-		str [b]=0;
-		val = strtol( str , &endptr , 10);
-		if ( endptr == str ) {
-			sprintf ( str , " \nFALHA " );
-			// continue ;
+			b = recv (sd ,str ,999 ,0);
+			str [b]=0;
+			val = strtol(str , &endptr , 10);
+			if ( endptr == str ) {
+				sprintf ( str , " \nFALHA " );
+				// continue ;
+				}
+			else
+			{ 
+				send(sd, msg[val], strlen(msg[val]), 0);
 			}
-		else
-		{ send(sd, msg[val], strlen(msg[val]), 0);
-		}
-			sem_post (&m);
+		sem_post (&m);
 
-	} else
+	} 
+	else
 	if (!strncmp ( str , "SEARCH" ,6)) { 
 		sem_wait(&m);
-		j = 0;
-		b = recv(sd, str, 999, 0);
-		str[b] = 0;
-		uppercase(str);
-		j = strlen(str); 
-		j = j - 2;
-		strncpy(needle, str, j);
-		strcat(needle, "\0");
-		for ( i =0; i <=1000; i ++)
-		{
-			strcpy(haystack ,msg[i]);
-			uppercase(haystack);
-			local = strstr(haystack ,needle);
-			if ( local != NULL )
+			j = 0;
+			b = recv(sd, str, 999, 0);
+			str[b] = 0;
+			uppercase(str);
+			j = strlen(str); 
+			j = j - 2;
+			strncpy(needle, str, j);
+			strcat(needle, "\0");
+			for ( i =0; i <=1000; i ++)
 			{
-				send(sd, msg[i], strlen(msg[i]), 0);
+				strcpy(haystack ,msg[i]);
+				uppercase(haystack);
+				local = strstr(haystack ,needle);
+				if ( local != NULL )
+				{
+					send(sd, msg[i], strlen(msg[i]), 0);
+				}
+				else
+				{}
 			}
-			else
-			{}
-		}
-	j = j + 2;
-	for ( i =0; i <= j ; i ++)
-	{
-		needle [ i ] = '\0';
-		j = 0;
-	}
-	sem_post(&m);
-	} else
+			j = j + 2;
+			for ( i =0; i <= j ; i ++)
+			{
+				needle [ i ] = '\0';
+				j = 0;
+			}
+		sem_post(&m);
+	} 
+	else
 	if (! strncmp(str ,"PALAVRASD" , 9)) {
 		sem_wait(&m );
-		b = recv(sd ,str, 999, 0);
-		str[b] = 0;
-		val = strtol(str, &endptr ,10);
-		if ( endptr == str ) { sprintf(str, " \nFALHA " );
-		// continue ;
-		}
-		char result[20];
-		// chama funcao que conta e monta nova string
-		n = sprintf(result , " Palavras : %d \n " , words(msg[val]));
-		// Envia resultado
-		send(sd ,result ,strlen(result), 0);
+			b = recv(sd ,str, 999, 0);
+			str[b] = 0;
+			val = strtol(str, &endptr ,10);
+			if ( endptr == str ) { sprintf(str, " \nFALHA " );
+			// continue ;
+			}
+			char result[20];
+			// chama funcao que conta e monta nova string
+			n = sprintf(result , " Palavras : %d \n " , words(msg[val]));
+			// Envia resultado
+			send(sd ,result ,strlen(result), 0);
 		sem_post (&m);
 	} else
 	if (!strncmp(str, "PALAVRAST", 9)) {
 		sem_wait (&m);
-		char result [30];
+			char result [30];
 
-		for ( i = 0; i <= 1000; i ++){
-			numerototal = numerototal + words(msg[i]);
-		}
-		n = sprintf(result , " Total Palavras : %d \n " , numerototal );
-		send(sd , result , strlen(result) ,0);
+			for ( i = 0; i <= 1000; i ++){
+				numerototal = numerototal + words(msg[i]);
+			}
+			n = sprintf(result , " Total Palavras : %d \n " , numerototal );
+			send(sd , result , strlen(result) ,0);
 		sem_post (&m);
 
-		}
+	}
 	readcount --;
-		if ( readcount ==0)
+		if (readcount ==0)
 		{
-		sem_post(&wread);
+			sem_post(&wread);
 		}
 	sem_post(&read);
 
@@ -182,112 +185,117 @@ void escritor( char *str , int  sd ){
 	if (! strncmp ( str , "DEL" ,3)) { 
 		sem_wait (&wread );
 		sem_wait (&m );
-		b = recv ( sd , str ,999 ,0);
-		str [ b ]=0;
-		val = strtol ( str , &endptr , 10);
-		if ( endptr == str ) { sprintf ( str , " \nFALHA " );
-		// continue ;
-		}
-		else sprintf ( str , " \n N m e r o do ditado apagado " );
-			strcpy ( msg [ val ] , " " );
-			sprintf ( str , " \nOK " );
-			alteracoes ++;
-			sem_post (&m );
-			sem_post (&wread ); 
-	} else
-	if (! strncmp ( str , "ROTATE" ,6)) { 
-		sem_wait (&wread );
-		sem_wait (&m );
-		b = recv ( sd , str ,999 ,0);
-		str [ b ]=0;
-		val = strtol ( str , &endptr , 10);
-		if ( endptr == str ) { sprintf ( str , " \nFALHA " );
-		// continue ;
-		}
-		else sprintf ( str , " \nOk " );
-			strcpy ( cpy , msg [ val ]); // armazenar o ditado selecionado
-		b = recv ( sd , str ,999 ,0); // ditado vai ser copiado para outro vetor
-			str [ b ]=0;
-			val1 = strtol ( str , &endptr , 10); // selecionando qual ditado vai receber
-			if ( endptr == str ) { sprintf ( str , " \nFALHA " );
+			b = recv(sd , str ,999 ,0);
+			str[b] = 0;
+			val = strtol(str , &endptr , 10);
+			if ( endptr == str ) { sprintf(str, "\nFALHA" );
 			// continue ;
 			}
-			else sprintf ( str , " \nOk " );
-				strcpy ( cpy1 , msg [ val1 ]); // copiando a segunda mensagem
-				strcpy ( msg [ val1 ] , cpy ); // copiando a mensagem 1 na mensagem2
-				strcpy ( msg [ val ] , cpy1 ); // copiando a mensagem 2 na mensagem1
+			else sprintf ( str , "\nNumero do ditado apagado" );
+				strcpy ( msg [val] , "" );
+				sprintf ( str , "\nOK" );
 				alteracoes ++;
-				sem_post (&m );
-				sem_post (&wread ); // operacao up
-	} else
-	if (! strncmp ( str , "REPLACE" ,7)) {
-		sem_wait (&wread );
-		sem_wait (&m );
-		b = recv ( sd , str ,999 ,0);
-		str [ b ]=0;
-		val = strtol ( str , &endptr , 10);
-			if ( endptr == str ) { sprintf ( str , " \nFALHA " );
-			// continue ;
-			}
-			else sprintf ( str , " \nOK " );
-		
-		send ( sd , str , strlen ( str ) ,0);
-		b = recv ( sd , str ,999 ,0);
-		str [ b ]=0;
-		strcpy ( msg [ val ] , str );
-		sprintf ( str , " \nOK " );
-		send ( sd , str , strlen ( str ) ,0);
-		printf ( " \n Novo ditado %d : %s " ,val , msg [ val ]);
-		alteracoes ++;
 		sem_post (&m );
 		sem_post (&wread ); 
-	} else
-	if (! strncmp ( str , "GRAVA" ,5)) {
-		sem_wait (&wread );
-		sem_wait (&m );
+	} 
+	else
+	if (!strncmp(str , "ROTATE" ,6)) { 
+		sem_wait(&wread);
+		sem_wait(&m);
+			b = recv ( sd , str ,999 ,0);
+			str [ b ]=0;
+			val = strtol ( str , &endptr , 10);
+			if ( endptr == str ) { sprintf ( str , "\nFALHA" );
+			// continue ;
+			}
+			else sprintf(str, "\nOk" );
+				strcpy ( cpy , msg [ val ]); // armazenar o ditado selecionado
+				b = recv ( sd , str ,999 ,0); // ditado vai ser copiado para outro vetor
+				str [ b ]=0;
+				val1 = strtol ( str , &endptr , 10); // selecionando qual ditado vai receber
+				if ( endptr == str ) { sprintf ( str , "\nFALHA" );
+				// continue ;
+				}
+				else sprintf ( str , "\nOk" );
+					strcpy ( cpy1 , msg [ val1 ]); // copiando a segunda mensagem
+					strcpy ( msg [ val1 ] , cpy ); // copiando a mensagem 1 na mensagem2
+					strcpy ( msg [ val ] , cpy1 ); // copiando a mensagem 2 na mensagem1
+					alteracoes ++;
+		sem_post (&m );
+		sem_post (&wread ); // operacao up
+	} 
+	else
+	if (! strncmp ( str , "REPLACE" ,7)) {
+		sem_wait (&wread);
+		sem_wait (&m);
+			b = recv ( sd , str ,999 ,0);
+			str[b] = 0;
+			val = strtol(str , &endptr , 10);
+				if ( endptr == str ) { sprintf ( str , "\nFALHA" );
+				// continue ;
+				}
+				else sprintf ( str , "\nOK" );
+				send ( sd , str , strlen ( str ) ,0);
+				b = recv ( sd , str ,999 ,0);
+				str[b] = 0;
+				strcpy ( msg [ val ] , str );
+				sprintf ( str , "\nOK" );
+				send(sd, str, strlen(str), 0);
+				printf ("\nNovo ditado %d : %s ", val, msg[val]);
+				alteracoes ++;
+		sem_post(&m);
+		sem_post(&wread); 
+	} 
+	else
+	if (!strncmp(str , "GRAVA" ,5)) {
+		sem_wait(&wread);
+		sem_wait(&m);
 
-		FILE *fptr ;
-		fptr = fopen ("Ditados.txt" , "w" );
-		if ( fptr == NULL )
-		{
-			printf ( " Erro ao abrir arquivo " );
-			exit (0);
-		}
-		// loop que roda por todo o msg gravando no arquivo
-		for ( i = 0; i <= 1000; i ++){
-			fprintf ( fptr , "%s " , msg [ i ]);
-		}
-		fclose ( fptr );
-			send ( sd , "Gravado em Ditados.txt \n " , strlen ( " Gravado em Ditados . txt \n " ) ,0);;
-			sem_post (&m );
-			sem_post (&wread ); 
-	} else
-	if (! strncmp ( str , "LE" ,2)) {
-		sem_wait (&wread );
-		sem_wait (&m );
+			FILE *fptr ;
+			fptr = fopen ("Ditados.txt" , "w" );
+			if ( fptr == NULL )
+			{
+				printf("Erro ao abrir arquivo");
+				exit (0);
+			}
+			// loop que roda por todo o msg gravando no arquivo
+			for ( i = 0; i <= 1000; i ++){
+				fprintf(fptr ,"%s" ,msg[i]);
+			}
+			fclose(fptr);
+			send(sd ,"Gravado em Ditados.txt\n", strlen("Gravado em Ditados.txt\n"), 0);;
+
+		sem_post(&m);
+		sem_post(&wread); 
+	} 
+	else
+	if (!strncmp(str ,"LE", 2)) {
+		sem_wait(&wread);
+		sem_wait(&m);
 
 		for ( i = 0; i <=1000; i ++){
-			strcpy ( msg [ i ] , " " );
+			strcpy(msg[i],"" );
 		}
 		FILE *arq ;
-		if ( ( arq = fopen ( "Ditados.txt" ,"r" )) == NULL ) { printf ( " \n Erro lendo arquivo ...\n \n " );}
+		if ( ( arq = fopen ( "Ditados.txt" ,"r" )) == NULL ) { printf ( "\nErro lendo arquivo...\n\n" );}
 		// loop que roda por por todo o arquivo lendo e gravando em msg
 		for ( i = 0; ! feof ( arq ); i ++){
-		fgets ( msg [ i ] ,999 , arq ); printf ( " %d %s " ,i , msg [ i ]);
+		fgets(msg[i], 999 ,arq ); printf( "%d %s", i ,msg[i]);
 		}
-		send ( sd , " \n Arquivo Lido " , strlen ( " \n Arquivo Lido " ) ,0);
+		send(sd, "\nArquivo Lido" ,strlen("\nArquivo Lido"),0);
 		sem_post (&m );
 		sem_post (&wread ); 
-	} else
+	} 
+	else
 	if (! strncmp ( str , "ALTERACOES" ,10)) {
-		sem_wait (&wread );
-		sem_wait (&m );
-		char result [30];
-		int n ;
-		n = sprintf ( result , " %d \n " , alteracoes );
-		send ( sd , result , strlen ( result ) ,0);
-		sem_post (&m );
-		sem_post (&wread ); 	
+		sem_wait(&wread);
+		sem_wait(&m);
+		char result[30];
+		int n;
+		n = sprintf(result,"%d\n", alteracoes );
+		send(sd, result ,strlen(result) ,0);
+		sem_post(&m);
+		sem_post(&wread); 	
 	}
 }
 
@@ -303,7 +311,7 @@ void *atendeConexao(void *sd2 )
 
 	while (1) {
 		visits ++;
-		sprintf( str , "REQUISIÇÃO %d \n " , visits );
+		sprintf( str , "REQUISIÇÃO %d\n " , visits );
 		send( sd , str , strlen(str) ,0);
 		b = recv( sd , str ,999 ,0);
 		str [b]=0;

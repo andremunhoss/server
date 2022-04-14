@@ -1,7 +1,7 @@
-# include <stdio.h>
-# include <stdlib.h>
-# include <pthread.h>
-# include <unistd.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <pthread.h>
+#include <unistd.h>
 
 int max , t ;
 
@@ -28,8 +28,7 @@ int main (int argc ,char *argv[])
 	int *status , i , arg =0;
 
 	if (argc!=3) {
-		printf ( " \nMain : Ops %d . Errou o comando : \n %s < numero maximo de interacoes >\
-		< numero de threads >\n \n " , argc , argv[0]);
+		printf ( " \nMain : Ops %d . Errou o comando : \n %s < numero maximo de interacoes > < numero de threads >\n \n " , argc , argv[0]);
 		exit (0);
 	}
 	max = atoi(argv[1]);
@@ -42,9 +41,9 @@ int main (int argc ,char *argv[])
 	for ( i =0; i < t ; i ++) {
 		printf ( " \nMain : Programa principal " );
 		printf ( " \nMain : .... Criando Thread %d ", i);
-		status[i] = pthread_create(&thread[i],NULL,codigo_thread, ( void *) arg);
+		status[i] = pthread_create(&thread[i],NULL, &codigo_thread, &arg);
 		if (status[i] != 0) {
-			printf ( " \nMain : .... ops .... erro ... p thread _creat e retornou o erro %d \n " , status[i]);
+			printf ( " \nMain : .... ops .... erro ... pthread _create retornou o erro %d \n " , status[i]);
 			exit (-1);
 		}
 	}

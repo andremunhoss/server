@@ -15,7 +15,7 @@
 #include <unistd.h>
 #include <time.h>
 
-#define PROTOPORT       8058           /* default protocol port number */
+#define PROTOPORT       9551           /* default protocol port number */
 #define QLEN            6               /* size of request queue        */
 
 int     visits      =   0;              /* counts client connections    */
@@ -27,7 +27,7 @@ void LeDitado()
 {
     FILE *arq;
  
-    if ( (arq=fopen("ditados.txt","r")) == NULL ) { printf("\n Erro lendo arquivo ...\n\n");exit(0);}
+    if ( (arq=fopen("Ditados.txt","r")) == NULL ) { printf("\n Erro lendo arquivo ...\n\n");exit(0);}
     while (!feof(arq)) {
        
        fgets(msg[ditados],999,arq); 
@@ -79,7 +79,7 @@ void *atendeConexao( void *sd2 )
 
         while (1) {	
 		visits++;
-		sprintf(str,"Requisição %d \n", visits);
+		sprintf(str,"Requisição %d\n", visits);
 		send(sd,str,strlen(str),0);
 		b=recv(sd,str,999,0);
                 str[b]=0;
@@ -88,7 +88,7 @@ void *atendeConexao( void *sd2 )
 		uppercase(str);
 	       	
 		if (!strncmp(str,"GETR",4)) {
-		     sprintf(str,"\nDitado %d: %s ", rand() % ditados, msg[rand() % ditados]);
+		     sprintf(str,"\nDitado %d: %s", rand() % ditados, msg[rand() % ditados]);
 		     send(sd,str,strlen(str),0);
 		}
 		else
@@ -210,7 +210,7 @@ void *atendeConexao( void *sd2 )
 
 		FILE *fptr;
 
-			fptr = fopen("ditados.txt", "w"); // abre arquivo escrita
+			fptr = fopen("Ditados.txt", "w"); // abre arquivo escrita
 			if(fptr == NULL)
 				{
 				printf("Erro ao abrir arquivo");
@@ -233,7 +233,7 @@ void *atendeConexao( void *sd2 )
 
 			FILE *arq;
 
-			if ( (arq=fopen("ditados.txt","r")) == NULL ) { printf("\n Erro lendo arquivo ...\n\n");exit(0);}
+			if ( (arq=fopen("Ditados.txt","r")) == NULL ) { printf("\n Erro lendo arquivo ...\n\n");exit(0);}
 			//loop que roda por por todo o arquivo lendo e gravando em msg
 			for( i = 0; !feof(arq); i++){
 				fgets(msg[i],999,arq); printf("%d %s",i,msg[i]);
